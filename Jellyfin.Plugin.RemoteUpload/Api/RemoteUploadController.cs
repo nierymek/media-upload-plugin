@@ -51,6 +51,11 @@ public class UploadController : ControllerBase
 <body>
     <h1>Remote Upload</h1>
     <p>Select files and upload directly to the server.</p>
+    <p>Authentication token is detected automatically when possible. If upload fails with 401, paste token/API key below.</p>
+    <div class="row">
+        <label for="token">Token / API key (optional)</label><br />
+        <input id="token" type="text" style="width:100%;padding:.5rem;" placeholder="Paste MediaBrowser token or api_key" />
+    </div>
     <div class="row">
         <input id="files" type="file" multiple />
     </div>
@@ -61,20 +66,61 @@ public class UploadController : ControllerBase
 
     <script>
         const filesInput = document.getElementById('files');
+        const tokenInput = document.getElementById('token');
         const uploadBtn = document.getElementById('upload');
         const status = document.getElementById('status');
 
-        function getAuthHeader() {
+        function tryGetTokenFromCredentialStore(raw) {
+            try {
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed || !Array.isArray(parsed.Servers)) return null;
+
+                const host = window.location.host.toLowerCase();
+                const sameHostServer = parsed.Servers.find(s =>
+                    s && typeof s.Address === 'string' && s.Address.toLowerCase().includes(host) && s.AccessToken);
+
+                if (sameHostServer && sameHostServer.AccessToken) {
+                    return sameHostServer.AccessToken;
+                }
+
+                const firstWithToken = parsed.Servers.find(s => s && s.AccessToken);
+                return firstWithToken ? firstWithToken.AccessToken : null;
+            } catch {
+                return null;
+            }
+        }
+
+        function getToken() {
+            const manual = tokenInput.value.trim();
+            if (manual) {
+                return manual;
+            }
+
             if (window.ApiClient && typeof window.ApiClient.accessToken === 'function') {
                 const token = window.ApiClient.accessToken();
                 if (token) {
-                    return 'MediaBrowser Token=' + token;
+                    return token;
                 }
             }
 
             const tokenFromQuery = new URLSearchParams(window.location.search).get('api_key');
             if (tokenFromQuery) {
-                return 'MediaBrowser Token=' + tokenFromQuery;
+                return tokenFromQuery;
+            }
+
+            const tokenFromQueryAlt = new URLSearchParams(window.location.search).get('token');
+            if (tokenFromQueryAlt) {
+                return tokenFromQueryAlt;
+            }
+
+            const credentialKeys = ['jellyfin_credentials', 'emby_credentials', 'credentials'];
+            for (const key of credentialKeys) {
+                const token = tryGetTokenFromCredentialStore(localStorage.getItem(key));
+                if (token) {
+                    tokenInput.value = token;
+                    return token;
+                }
             }
 
             return null;
@@ -90,7 +136,7 @@ public class UploadController : ControllerBase
             uploadBtn.disabled = true;
             status.textContent = 'Uploading...';
 
-            const authHeader = getAuthHeader();
+            const token = getToken();
 
             try {
                 for (const file of files) {
@@ -100,11 +146,15 @@ public class UploadController : ControllerBase
                     form.append('totalChunks', '1');
 
                     const headers = {};
-                    if (authHeader) {
-                        headers.Authorization = authHeader;
+                    let uploadUrl = '/mediaupload/upload';
+
+                    if (token) {
+                        headers.Authorization = 'MediaBrowser Token="' + token + '"';
+                        headers['X-Emby-Token'] = token;
+                        uploadUrl += '?api_key=' + encodeURIComponent(token);
                     }
 
-                    const res = await fetch('/mediaupload/upload', {
+                    const res = await fetch(uploadUrl, {
                         method: 'POST',
                         headers,
                         body: form,
@@ -112,8 +162,15 @@ public class UploadController : ControllerBase
                     });
 
                     if (!res.ok) {
-                        const result = await res.json().catch(() => ({}));
-                        throw new Error(result.message || ('Upload failed for ' + file.name));
+                        const bodyText = await res.text().catch(() => '');
+                        let details = bodyText;
+                        try {
+                            const parsed = JSON.parse(bodyText);
+                            details = parsed.message || bodyText;
+                        } catch {
+                            // Keep plain text details
+                        }
+                        throw new Error('Upload failed for ' + file.name + ' (HTTP ' + res.status + '). ' + (details || 'No error details.'));
                     }
                 }
 
