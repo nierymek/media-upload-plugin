@@ -8,7 +8,7 @@
         "overview": "remoteupload",
         "versions": [
             {
-                "checksum": "sha256:1d7cccd4acdf03f55b214d7f00b7ffe6dbddbbdd68cdce1c5f4f3b96e3de3a9d",
+                "checksum": "FE75E8C731ED9894752A1A5423BEC278",
                 "changelog": "1.7 Release - Fork update",
                 "targetAbi": "10.9.9.0",
                 "sourceUrl": "https://github.com/nierymek/media-upload-plugin/releases/download/1.7/plugin.zip",
