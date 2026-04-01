@@ -107,7 +107,18 @@
 		};
 
 		document.querySelector(".RemoteUploadConfigPage").addEventListener("pageshow", async function () {
-			updateUI();
+			const user = await ApiClient.getCurrentUser();
+			const isAdmin = user && user.Policy && user.Policy.IsAdministrator;
+
+			if (isAdmin) {
+				updateUI();
+			} else {
+				document.getElementById("SetUploadDirectory").style.display = "none";
+				document.getElementById("RemoteUploadForm").style.display = "none";
+				document.getElementById("RemoteDownload").style.display = "none";
+				document.getElementById("RemoteDirectory").style.display = "none";
+				Dashboard.hideLoadingMsg();
+			}
 			await load();
 		});
 

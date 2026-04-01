@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Jellyfin.Plugin.RemoteUpload.Api;
 
 [ApiController]
-[Authorize(Policy = Policies.RequiresElevation)]
+[Authorize(Policy = Policies.DefaultAuthorization)]
 [Route("mediaupload")]
 public class UploadController : ControllerBase
 {
@@ -43,7 +43,8 @@ public class UploadController : ControllerBase
             }
 
             if (file.Length > 0) {
-                var tempFilePath = Path.Combine(uploaddir, $"{file.FileName}.part");
+                var safeFileName = Path.GetFileName(file.FileName);
+                var tempFilePath = Path.Combine(uploaddir, $"{safeFileName}.part");
 
                 using (var stream = new FileStream(tempFilePath, chunkIndex == 0 ? FileMode.Create : FileMode.Append))
                 {
@@ -53,7 +54,7 @@ public class UploadController : ControllerBase
                 if (chunkIndex + 1 == totalChunks)
                 {
                     // All chunks uploaded, rename the temporary file to the original filename
-                    var finalFilePath = Path.Combine(uploaddir, file.FileName);
+                    var finalFilePath = Path.Combine(uploaddir, safeFileName);
                     if (System.IO.File.Exists(finalFilePath))
                     {
                         System.IO.File.Delete(finalFilePath);
@@ -62,7 +63,7 @@ public class UploadController : ControllerBase
                 }
             }
 
-            return Ok(new { name = file.FileName, chunk = chunkIndex });
+            return Ok(new { name = safeFileName, chunk = chunkIndex });
         }
         catch (Exception ex) // Catch any other exceptions
         {
@@ -222,6 +223,7 @@ public class UploadController : ControllerBase
 
     [HttpPost]
     [Route("download")]
+    [Authorize(Policy = Policies.RequiresElevation)]
     public async Task<IActionResult> DownloadFile([FromForm] string path)
     {
         if (string.IsNullOrEmpty(path) || !System.IO.File.Exists(path))
@@ -244,6 +246,7 @@ public class UploadController : ControllerBase
 
     [HttpPost]
     [Route("directory")]
+    [Authorize(Policy = Policies.RequiresElevation)]
     public IActionResult ListFolderContent([FromForm] string path)
     {
         try
