@@ -65,8 +65,11 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
             new PluginPageInfo
             {
                 Name = @"RemoteFileUpload",
+                DisplayName = "Remote Upload",
                 EmbeddedResourcePath = string.Format(CultureInfo.InvariantCulture, "{0}.Pages.menu.html", GetType().Namespace),
-                EnableInMainMenu = true
+                EnableInMainMenu = true,
+                MenuSection = "main",
+                MenuIcon = "upload"
             }
         };
     }
