@@ -1,4 +1,4 @@
-<div data-role="page" class="page type-interior pluginConfigurationPage RemoteUploadConfigPage"
+<div data-role="page" class="page type-interior RemoteUploadPage"
 	 data-require="emby-button,emby-select,emby-checkbox">
 	<div data-role="content">
 		<div class="content-primary">
@@ -106,7 +106,7 @@
 			pluginUniqueId: 'b5a2d6b3-c5f4-4f88-aed4-5f3e9877d0a6',
 		};
 
-		document.querySelector(".RemoteUploadConfigPage").addEventListener("pageshow", async function () {
+		document.querySelector(".RemoteUploadPage").addEventListener("pageshow", async function () {
 			const user = await ApiClient.getCurrentUser();
 			const isAdmin = user && user.Policy && user.Policy.IsAdministrator;
 
@@ -117,7 +117,9 @@
 				document.getElementById("RemoteUploadForm").style.display = "none";
 				document.getElementById("RemoteDownload").style.display = "none";
 				document.getElementById("RemoteDirectory").style.display = "none";
-				Dashboard.hideLoadingMsg();
+				if (typeof Dashboard !== "undefined") {
+					Dashboard.hideLoadingMsg();
+				}
 			}
 			await load();
 		});
