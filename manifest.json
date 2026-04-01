@@ -8,11 +8,11 @@
         "overview": "remoteupload",
         "versions": [
             {
-                "checksum": "46f730db76a3b553c9e8e788675fefa4",
-                "changelog": "1.7.1 Release - user UI visibility fixes",
+                "checksum": "eb4b1def97c16cba5b9e30a7d31877d0",
+                "changelog": "1.7.2 Release - user upload-only endpoint, admin-only advanced tools",
                 "targetAbi": "10.9.9.0",
-                "sourceUrl": "https://github.com/nierymek/media-upload-plugin/releases/download/1.7.1/plugin.zip",
-                "version": "1.7.1.0"
+                "sourceUrl": "https://github.com/nierymek/media-upload-plugin/releases/download/1.7.2/plugin.zip",
+                "version": "1.7.2.0"
             },
             {
                 "checksum": "14cb4ee6708b88dd2cd6885ea4de540d",

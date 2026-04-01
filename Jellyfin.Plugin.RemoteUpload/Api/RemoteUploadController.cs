@@ -29,6 +29,109 @@ public class UploadController : ControllerBase
             _httpClientFactory = httpClientFactory;
         }
 
+    [HttpGet("user")]
+    [Produces("text/html")]
+    public IActionResult UserUploadPage()
+    {
+        const string html = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Remote Upload</title>
+    <style>
+        body { font-family: sans-serif; max-width: 680px; margin: 2rem auto; padding: 0 1rem; }
+        .row { margin: 1rem 0; }
+        button { padding: .65rem 1rem; cursor: pointer; }
+        #status { margin-top: 1rem; white-space: pre-line; }
+    </style>
+</head>
+<body>
+    <h1>Remote Upload</h1>
+    <p>Select files and upload directly to the server.</p>
+    <div class="row">
+        <input id="files" type="file" multiple />
+    </div>
+    <div class="row">
+        <button id="upload">Upload</button>
+    </div>
+    <div id="status"></div>
+
+    <script>
+        const filesInput = document.getElementById('files');
+        const uploadBtn = document.getElementById('upload');
+        const status = document.getElementById('status');
+
+        function getAuthHeader() {
+            if (window.ApiClient && typeof window.ApiClient.accessToken === 'function') {
+                const token = window.ApiClient.accessToken();
+                if (token) {
+                    return 'MediaBrowser Token=' + token;
+                }
+            }
+
+            const tokenFromQuery = new URLSearchParams(window.location.search).get('api_key');
+            if (tokenFromQuery) {
+                return 'MediaBrowser Token=' + tokenFromQuery;
+            }
+
+            return null;
+        }
+
+        uploadBtn.addEventListener('click', async () => {
+            const files = filesInput.files;
+            if (!files || files.length === 0) {
+                status.textContent = 'No files selected.';
+                return;
+            }
+
+            uploadBtn.disabled = true;
+            status.textContent = 'Uploading...';
+
+            const authHeader = getAuthHeader();
+
+            try {
+                for (const file of files) {
+                    const form = new FormData();
+                    form.append('file', file);
+                    form.append('chunkIndex', '0');
+                    form.append('totalChunks', '1');
+
+                    const headers = {};
+                    if (authHeader) {
+                        headers.Authorization = authHeader;
+                    }
+
+                    const res = await fetch('/mediaupload/upload', {
+                        method: 'POST',
+                        headers,
+                        body: form,
+                        credentials: 'include'
+                    });
+
+                    if (!res.ok) {
+                        const result = await res.json().catch(() => ({}));
+                        throw new Error(result.message || ('Upload failed for ' + file.name));
+                    }
+                }
+
+                status.textContent = 'Upload finished.';
+                filesInput.value = '';
+            } catch (err) {
+                status.textContent = err.message || 'Upload failed.';
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
+""";
+
+        return Content(html, "text/html");
+    }
+
     [HttpPost("upload")]
     public async Task<IActionResult> OnPostUploadAsync([FromForm] IFormFile file, [FromForm] int chunkIndex, [FromForm] int totalChunks)
     {
@@ -72,6 +175,7 @@ public class UploadController : ControllerBase
     }
 
     [HttpPost("upload_url")]
+    [Authorize(Policy = Policies.RequiresElevation)]
     public async Task<IActionResult> URLOnPostUploadAsync([FromForm] string url) {
         if (string.IsNullOrEmpty(url))
         {
@@ -145,6 +249,7 @@ public class UploadController : ControllerBase
     }
 
     [HttpPost("upload_bulk_url")]
+    [Authorize(Policy = Policies.RequiresElevation)]
     public async Task<IActionResult> URLOnPostBulkUploadAsync([FromForm] List<string> urls) {
         for (int i = 0; i<urls.Count; i++) {
             if (string.IsNullOrEmpty(urls[i]))
@@ -344,6 +449,7 @@ public class UploadController : ControllerBase
 
     // Cancel a URL download
     [HttpPost("upload_cancel")]
+    [Authorize(Policy = Policies.RequiresElevation)]
     public async Task<IActionResult> CancelUpload([FromForm] string cancellationKey)
     {
         try {
@@ -372,6 +478,7 @@ public class UploadController : ControllerBase
 
     // Gets all running tasks
     [HttpGet("get_tasks")]
+    [Authorize(Policy = Policies.RequiresElevation)]
     public IActionResult GetUploadTasks()
     {
         var tasks = _uploadTasks.Select(task => new
