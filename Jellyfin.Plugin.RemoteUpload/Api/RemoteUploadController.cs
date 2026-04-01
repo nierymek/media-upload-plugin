@@ -30,6 +30,7 @@ public class UploadController : ControllerBase
         }
 
     [HttpGet("user")]
+    [AllowAnonymous]
     [Produces("text/html")]
     public IActionResult UserUploadPage()
     {
