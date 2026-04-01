@@ -4,9 +4,16 @@
         "guid": "b5a2d6b3-c5f4-4f88-aed4-5f3e9877d0a6",
         "name": "RemoteUpload",
         "description": "Upload files directly to the Jellyfin-Server, or let the server automatically download files from an URL. Please read Github for more.",
-        "owner": "grandguyjs",
+        "owner": "nierymek",
         "overview": "remoteupload",
         "versions": [
+            {
+                "checksum": "sha256:1d7cccd4acdf03f55b214d7f00b7ffe6dbddbbdd68cdce1c5f4f3b96e3de3a9d",
+                "changelog": "1.7 Release - Fork update",
+                "targetAbi": "10.9.9.0",
+                "sourceUrl": "https://github.com/nierymek/media-upload-plugin/releases/download/1.7/plugin.zip",
+                "version": "1.7.0.0"
+            },
             {
                 "checksum": "14cb4ee6708b88dd2cd6885ea4de540d",
                 "changelog": "1.6 Release - Styling fix",

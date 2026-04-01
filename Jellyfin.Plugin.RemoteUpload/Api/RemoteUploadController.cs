@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Jellyfin.Plugin.RemoteUpload.Api;
 
 [ApiController]
-[Authorize(Policy = Policies.DefaultAuthorization)]
+[Authorize]
 [Route("mediaupload")]
 public class UploadController : ControllerBase
 {
@@ -36,6 +36,7 @@ public class UploadController : ControllerBase
         {
             PluginConfiguration? config = Plugin.Instance.Configuration;
             string uploaddir = config.uploaddir;
+            var safeFileName = Path.GetFileName(file.FileName);
 
             if (!Directory.Exists(uploaddir))
             {
@@ -43,7 +44,6 @@ public class UploadController : ControllerBase
             }
 
             if (file.Length > 0) {
-                var safeFileName = Path.GetFileName(file.FileName);
                 var tempFilePath = Path.Combine(uploaddir, $"{safeFileName}.part");
 
                 using (var stream = new FileStream(tempFilePath, chunkIndex == 0 ? FileMode.Create : FileMode.Append))
